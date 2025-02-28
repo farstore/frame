@@ -12,10 +12,20 @@ export default function AppTile({
 }) {
   return (
     <div className="flex" style={{ alignItems: "center" }}>
-      <div className="flex-shrink" style={{ width: "4em", height: "4em", margin: '0 auto' }}>
+      <div className="flex flex-shrink"
+        style={{
+          width: "4em",
+          height: "4em",
+          margin: '0 auto',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '12px',
+          border: '1px solid #ccc',
+        }}
+      >
         <img
           src={iconUrl || '/fallback-icon.png'}
-          style={{ borderRadius: '12px', border: '1px solid #ccc' }}
+          style={{ borderRadius: '12px' }}
           alt="app-logo"
         />
       </div>

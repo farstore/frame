@@ -9,7 +9,7 @@ export async function GET() {
     frame: {
       version: "1",
       name: "Farstore",
-      iconUrl: `${appUrl}/icon.png`,
+      iconUrl: `${appUrl}/web-app-manifest-192x192.png`,
       homeUrl: appUrl,
       imageUrl: `${appUrl}/opengraph-image`,
       buttonTitle: "Explore Apps",

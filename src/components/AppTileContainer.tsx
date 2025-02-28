@@ -50,6 +50,7 @@ export default function AppTileContainer({
     const lookup = async (domain: string) => {
       try {
         const { name, iconUrl } = await getFrame(domain);
+        console.log(name, iconUrl);
         setName(name);
         setIconUrl(iconUrl);
         if (onLoad) {
