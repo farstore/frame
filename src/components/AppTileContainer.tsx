@@ -28,6 +28,7 @@ export default function AppTileContainer({
   openUrl: (url: string) => void;
 }) {
   const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [homeUrl, setHomeUrl] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
 
   const { data: domainRes } = useReadContract({
@@ -49,10 +50,10 @@ export default function AppTileContainer({
   useEffect(() => {
     const lookup = async (domain: string) => {
       try {
-        const { name, iconUrl } = await getFrame(domain);
-        console.log(name, iconUrl);
+        const { name, iconUrl, homeUrl } = await getFrame(domain);
         setName(name);
         setIconUrl(iconUrl);
+        setHomeUrl(homeUrl);
         if (onLoad) {
           onLoad();
         }
@@ -69,7 +70,7 @@ export default function AppTileContainer({
   }, [domain, onLoad]);
 
   return (
-    <div onClick={() => openUrl(domain)} style={{ cursor: 'pointer' }}>
+    <div onClick={() => openUrl(homeUrl || domain)} style={{ cursor: 'pointer' }}>
       <AppTile iconUrl={iconUrl} name={name} owner={owner} />
     </div>
   );

@@ -93,11 +93,12 @@ export default function Home() {
     </div>
   )
 
-  const openUrl = useCallback((domain: string) => {
+  const openUrl = useCallback((url: string) => {
+    const normalizedUrl = url.indexOf('://') > -1 ? url : `https://${url}`;
     if (!!context) {
-      sdk.actions.openUrl(`https://warpcast.com/~/frames/launch?domain=${domain}`);
+      sdk.actions.openUrl(`https://warpcast.com/?launchFrameUrl=${normalizedUrl}`);
     } else {
-      window.open(`https://${domain}`, '_blank');
+      window.open(normalizedUrl, '_blank');
     }
   }, [context]);
 

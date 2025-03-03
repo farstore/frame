@@ -20,14 +20,14 @@
     "connectkit": "^1.8.2",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
-    "next": "15.0.3",
+    "next": "15.2.0",
     "ox": "^0.4.2",
     "pino-pretty": "^13.0.0",
     "react": "^18",
     "react-dom": "^18",
     "react-router-dom": "^7.1.1",
     "viem": "^2.21.55",
-    "wagmi": "^2.14.3"
+    "wagmi": "^2.14.12"
   },
   "devDependencies": {
     "@types/node": "^20",
