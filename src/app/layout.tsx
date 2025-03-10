@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "~/app/globals.css";
-import WagmiProvider from "~/components/providers/WagmiProvider";
-import Navigation from "~/components/Navigation";
+import Client from "./client";
 
 export const metadata: Metadata = {
   title: "Farstore",
@@ -27,10 +26,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <WagmiProvider>
-          <Navigation />
-          {children}
-        </WagmiProvider>
+        <Client>{children}</Client>
       </body>
     </html>
   );

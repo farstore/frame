@@ -1,9 +1,9 @@
 "use client";
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from "react";
-import sdk, {
-  type FrameContext,
-} from "@farcaster/frame-sdk";
+import { useDispatch } from 'react-redux';
+
+import sdk, { Context } from "@farcaster/frame-sdk";
 import {
   useReadContract,
 } from "wagmi";
@@ -13,16 +13,22 @@ import {
   farstoreAbi,
   farstoreAddress,
 } from "~/constants/abi-farstore";
+import {
+  fetchApps,
+} from "~/store/slices/appSlice";
+import { Dispatch } from "~/store";
 
 import AppTileContainer from "./AppTileContainer";
 
 export default function Home() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<FrameContext>();
+  const [context, setContext] = useState<Context.FrameContext>();
   const [cacheBust, setCacheBust] = useState(0);
   const [frameAdded, setFrameAdded] = useState(false);
 
   const [pages, setPages] = useState(1);
+
+  const dispatch = useDispatch<Dispatch>();
 
   const added = frameAdded || (context && context.client && context.client.added);
   const notifications = frameAdded || (context && context.client && context.client.notificationDetails);
@@ -58,10 +64,22 @@ export default function Home() {
     functionName: "getListedFrames",
     args: [],
   });
-  const listedRes = (getListedRes || []) as bigint[];
+  const listedRes = ((getListedRes || []) as bigint[]).map(id => Number(id));
   const numListed = listedRes.length;
   const max = Math.min(10 * pages, numListed);
-  const frameIds = listedRes.map(id => Number(id)).sort((a, b) => a > b ? -1 : 1).slice(0, max);
+  const frameIds = listedRes.sort((a, b) => a > b ? -1 : 1).slice(0, max);
+
+  useEffect(() => {
+    if (frameIds.length > 0) {
+      console.log('calling');
+      dispatch(fetchApps(frameIds));
+    }
+  }, [dispatch, frameIds]);
+
+  const loadMore = () => {
+    setPages(pages + 1);
+  };
+
 
   const addButton = !!context ? (
     <div
@@ -120,7 +138,7 @@ export default function Home() {
         }
         {
           numListed != frameIds.length &&
-          <button type="button" className="secondary-button mt-2 mb-10" onClick={() => setPages(pages + 1)}>
+          <button type="button" className="secondary-button mt-2 mb-10" onClick={loadMore}>
             Load more
           </button>
         }

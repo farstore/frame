@@ -6,7 +6,7 @@ const apiKey = `Bearer ${process.env.FARSTORE_API_KEY}`;
 export async function getUserNotificationDetails(
   fid: number
 ): Promise<FrameNotificationDetails | null> {
-  const response = await fetch(`${baseUrl}/v1/notification_target?fid=${fid}`, {
+  const response = await fetch(`${baseUrl}/private/notification_target?fid=${fid}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -21,7 +21,7 @@ export async function setUserNotificationDetails(
   fid: number,
   notificationDetails: FrameNotificationDetails
 ): Promise<void> {
-  await fetch(`${baseUrl}/v1/notification_target`, {
+  await fetch(`${baseUrl}/private/notification_target`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -38,7 +38,7 @@ export async function setUserNotificationDetails(
 export async function deleteUserNotificationDetails(
   fid: number
 ): Promise<void> {
-  await fetch(`${baseUrl}/v1/notification_target`, {
+  await fetch(`${baseUrl}/private/notification_target`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",

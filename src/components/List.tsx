@@ -1,7 +1,8 @@
 "use client";
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Address } from "viem";
+import { useModal } from "connectkit";
 import {
   useAccount,
   useReadContract,
@@ -25,22 +26,22 @@ import {
 } from "~/constants/abi-farstore";
 
 import {
-  // getFrame,
+  getFrame,
   verifyFrame,
   getNullAddress,
 } from "~/lib/data";
 
-import AppTileContainer from "./AppTileContainer";
-
-export interface StringMap {
-  [key: string]: string;
-}
+import AppTile from "./AppTile";
 
 export default function List() {
+  const { setOpen } = useModal();
   const { address: connectedAddress } = useAccount();
   const router = useRouter();
 
   const [domain, setDomain] = useState<string>('');
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
+
   const [listing, setListing] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(false);
@@ -48,7 +49,6 @@ export default function List() {
   const [cacheBust, setCacheBust] = useState<number>(1);
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  // const [context, setContext] = useState<FrameContext>();
 
   useEffect(() => {
     const load = async () => {
@@ -93,7 +93,9 @@ export default function List() {
 
   useEffect(() => {
     if (frameId && isConfirmed) {
-      router.push("/");
+      getFrame(domain).then(() => {
+        router.push("/");
+      });
     }
   }, [router, frameId, domain, isConfirmed]);
 
@@ -129,15 +131,26 @@ export default function List() {
     }
   };
 
-  const onLoad = useCallback((e?: string) => {
-    setChecking(false);
-    if (e) {
-      setError(e);
-      setLoaded(false);
-    } else {
+  const lookup = async (domain: string) => {
+    const { name, iconUrl } = await getFrame(domain);
+    setName(name);
+    setIconUrl(iconUrl);
+  };
+
+  const check = async () => {
+    setError(null);
+    try {
+      setChecking(true);
+      const formattedDomain = new URL(domain.indexOf('://') == -1 ? `https://${domain}` : domain).hostname;
+      setDomain(formattedDomain);
+      await lookup(formattedDomain);
       setLoaded(true);
+    } catch (e) {
+      setChecking(false);
+      console.log(e);
+      setError('Invalid URL');
     }
-  }, []);
+  }
 
   return (
     <div className="max-w-[500px] mx-auto py-4 px-4">
@@ -151,10 +164,10 @@ export default function List() {
               padding: '.5em',
             }}
           >
-            <AppTileContainer
-              frameDomain={domain}
-              openUrl={sdk.actions.openUrl}
-              onLoad={onLoad}
+            <AppTile
+              owner={getNullAddress()}
+              iconUrl={iconUrl}
+              name={name}
             />
           </div>
         </div>
@@ -177,16 +190,7 @@ export default function List() {
           <button
             className="claim-button mt-2"
             disabled={checking}
-            onClick={() => {
-              setError(null);
-              try {
-                setDomain(new URL(domain.indexOf('://') == -1 ? `https://${domain}` : domain).hostname);
-                setChecking(true);
-              } catch (e) {
-                console.log(e);
-                setError('Invalid URL');
-              }
-            }}
+            onClick={check}
           >
             {checking ? 'Loading' : 'Next →'}
           </button>
@@ -199,16 +203,18 @@ export default function List() {
           <button
             className="claim-button mt-2"
             disabled={listing}
-            onClick={list}
+            onClick={connectedAddress ? list : () => setOpen(true)}
           >
-            {listing ? 'Submitting' : 'Submit'}
+            {
+              connectedAddress ? 'Submit' : 'Connect Wallet and Submit'
+            }
           </button>
         </div>
       }
       { error ? (
         <div className="mb-4 mt-4">
           <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-            <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">{error}</pre>
+            <pre className="font-mono text-xs whitespace-pre-wrap break-words overflow-x-">{error}</pre>
           </div>
         </div>
       ) : null}

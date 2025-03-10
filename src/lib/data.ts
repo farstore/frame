@@ -1,10 +1,16 @@
 import axios from "axios";
 import { Address } from "viem";
 
-interface FrameMetadata {
+export interface FrameMetadata {
   name: string;
   iconUrl: string;
   homeUrl: string;
+}
+
+export interface AppMetadata {
+  domain: string;
+  frameId: number;
+  frame: FrameMetadata;
 }
 
 interface FrameVerification {
@@ -15,8 +21,12 @@ interface FrameVerification {
 
 export const getFrame = async (domain: string) => {
   const { data } = await axios.get(`/api/frame?domain=${domain}`);
-  console.log(data);
   return data as FrameMetadata;
+};
+
+export const getApps = async (frameIds: string) => {
+  const { data } = await axios.get(`/api/apps?frameIds=${frameIds}`);
+  return data as AppMetadata[];
 };
 
 export const verifyFrame = async (domain: string) => {

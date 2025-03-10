@@ -1,7 +1,7 @@
 import {
   useReadContract,
 } from "wagmi";
-import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { Address } from "viem";
 
 import {
@@ -10,33 +10,24 @@ import {
 } from "~/constants/abi-farstore";
 
 import {
-  getFrame,
   getNullAddress,
 } from "~/lib/data";
+import { State } from "~/store";
 
 import AppTile from "./AppTile";
 
 export default function AppTileContainer({
   frameId,
   frameDomain,
-  onLoad,
   openUrl
 }: {
   frameId?: number;
   frameDomain?: string;
-  onLoad?: (e?: string) => void;
   openUrl: (url: string) => void;
 }) {
-  const [iconUrl, setIconUrl] = useState<string | null>(null);
-  const [homeUrl, setHomeUrl] = useState<string | null>(null);
-  const [name, setName] = useState<string | null>(null);
 
-  const { data: domainRes } = useReadContract({
-    abi: farstoreAbi,
-    address: farstoreAddress as Address,
-    functionName: "getDomain",
-    args: [frameId],
-  });
+  const domainRes = useSelector((state: State) => state.app.domains[frameId as number]);
+  const frame = useSelector((state: State) => state.app.frames[frameId as number]);
   const domain = (frameDomain || domainRes || '') as string;
 
   const { data: ownerRes } = useReadContract({
@@ -47,31 +38,13 @@ export default function AppTileContainer({
   });
   const owner = (ownerRes || getNullAddress()) as string;
 
-  useEffect(() => {
-    const lookup = async (domain: string) => {
-      try {
-        const { name, iconUrl, homeUrl } = await getFrame(domain);
-        setName(name);
-        setIconUrl(iconUrl);
-        setHomeUrl(homeUrl);
-        if (onLoad) {
-          onLoad();
-        }
-      } catch (e) {
-        console.log(e);
-        if (onLoad) {
-          onLoad((e as Error).message);
-        }
-      }
-    }
-    if (domain) {
-      lookup(domain);
-    }
-  }, [domain, onLoad]);
+  if (!frame) {
+    return null;
+  }
 
   return (
-    <div onClick={() => openUrl(homeUrl || domain)} style={{ cursor: 'pointer' }}>
-      <AppTile iconUrl={iconUrl} name={name} owner={owner} />
+    <div onClick={() => openUrl(frame.homeUrl || domain)} style={{ cursor: 'pointer' }}>
+      <AppTile iconUrl={frame.iconUrl} name={frame.name} owner={owner} />
     </div>
   );
 }
