@@ -114,7 +114,7 @@ export default function Home() {
   const openUrl = useCallback((url: string) => {
     const normalizedUrl = url.indexOf('://') > -1 ? url : `https://${url}`;
     if (!!context) {
-      sdk.actions.openUrl(`https://warpcast.com/?launchFrameUrl=${normalizedUrl}`);
+      sdk.actions.openUrl(`https://warpcast.com/~/frames/launch?url=${encodeURIComponent(normalizedUrl)}`);
     } else {
       window.open(normalizedUrl, '_blank');
     }
