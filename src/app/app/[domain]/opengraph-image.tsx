@@ -1,19 +1,22 @@
 import { ImageResponse } from "next/og";
-import { getAppUrl } from "~/lib/data";
 import axios from "axios";
+import { getApiUrl } from "~/lib/data";
 
 export const contentType = "image/png";
-export const runtime = 'edge'; // Required for Edge Functions
 
-export default async function Image() {
-  const appUrl = getAppUrl();
-  const domain = new URL(appUrl).host;
+type Props = {
+  params: Promise<{ domain: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
 
-  const { data } = await axios.get(`${appUrl}/app/${domain}`);
+export default async function Image({ params }: Props) {
+  const { domain } = await params;
+  const { data } = await axios.get(`${getApiUrl()}/app/${domain}`);
   const {
     name,
     iconUrl,
     tagline,
+    // splashBackgroundColor,
   } = data.results.frame;
   return new ImageResponse(
     (

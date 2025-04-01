@@ -5,6 +5,8 @@ export interface FrameMetadata {
   name: string;
   iconUrl: string;
   homeUrl: string;
+  tagline: string;
+  imageUrl: string;
 }
 
 export interface AppMetadata {
@@ -19,9 +21,9 @@ interface FrameVerification {
   signature: string;
 }
 
-export const getFrame = async (domain: string) => {
-  const { data } = await axios.get(`/api/frame?domain=${domain}`);
-  return data as FrameMetadata;
+export const getAppByDomain = async (domain: string) => {
+  const { data } = await axios.get(`/api/app?domain=${domain}`);
+  return data as AppMetadata;
 };
 
 export const getApps = async (frameIds: string) => {
@@ -38,3 +40,4 @@ export const verifyFrame = async (domain: string) => {
 export const getNullAddress = () => "0x0000000000000000000000000000000000000000" as Address;
 
 export const getAppUrl = () => process.env.NEXT_PUBLIC_URL as string;
+export const getApiUrl = () => process.env.FARSTORE_API_URL as string;

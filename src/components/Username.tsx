@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import axios from 'axios';
 
 const prettyPrintAddress = (address: string) => `${address.substr(0, 6)}...${address.substr(-4)}`;
@@ -31,12 +30,12 @@ async function address2FC(address: string) {
     const res = response.data as NeynarUserResponse;
     const users = res[address.toLowerCase()];
     if (users) {
-      return users[0].username;
+      return users.sort((a, b) => a.follower_count < b.follower_count ? 1 : -1)[0].username;
     }
   }
 }
 
-function Username({ address, link, both }: { address: string, link?: boolean, both?: boolean }) {
+function Username({ address, both }: { address: string, both?: boolean }) {
   const [username, setUsername] = useState<string|null>('');
 
   useEffect(() => {
@@ -54,23 +53,15 @@ function Username({ address, link, both }: { address: string, link?: boolean, bo
     handleElt = (
       <span>
         {username}
-        <Link href={`https://warpcast.com/${username}`}>
-          <img
-            alt="farcaster-logo"
-            src="/fc.svg"
-            style={{ height: '1em', marginLeft: '.25em', cursor: 'pointer', display: 'inline-block' }}
-          />
-        </Link>
+        <img
+          alt="farcaster-logo"
+          src="/fc.svg"
+          style={{ height: '1em', marginLeft: '.25em', cursor: 'pointer', display: 'inline-block' }}
+        />
       </span>
     );
   }
-  let addressElt = <span>{prettyPrintAddress(address)}</span>;
-  if (link) {
-    if (handleElt) {
-      handleElt = (<Link href={`https://warpcast.com/${username}`} target="_blank" style={{ marginRight: '.5em' }}>{handleElt}</Link>);
-    }
-    addressElt = (<Link href={`https://basescan.org/address/${address}`} target="_blank">{addressElt}</Link>)
-  }
+  const addressElt = <span>{prettyPrintAddress(address)}</span>;
   if (both) {
     return <span>{handleElt}<span className="secondary-text">{addressElt}</span></span>
   }  else {

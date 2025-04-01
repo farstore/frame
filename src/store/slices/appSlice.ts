@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from "axios";
 
-import { AppMetadata, FrameMetadata, getApps } from '~/lib/data';
+import { AppMetadata, FrameMetadata, getApps, getAppByDomain } from '~/lib/data';
 import { State } from '~/store';
 
 // Async Thunk to Fetch Data
@@ -10,6 +10,19 @@ export const fetchApps = createAsyncThunk<AppMetadata[], number[]>('app/fetchApp
   const missingFrameIds = frameIds.filter((frameId) => state.app.frames[frameId] == undefined);
   try {
     const result = await getApps(missingFrameIds.join(','));
+    return result;
+  } catch (e) {
+    if (axios.isAxiosError(e)) {
+      throw new Error(e.response?.data?.error);
+    } else {
+      throw new Error((e as Error).message);
+    }
+  }
+});
+
+export const fetchAppByDomain = createAsyncThunk<AppMetadata, string>('app/fetchAppByDomain', async (domain) => {
+  try {
+    const result = await getAppByDomain(domain);
     return result;
   } catch (e) {
     if (axios.isAxiosError(e)) {
@@ -31,6 +44,7 @@ export interface AppState {
   frames: {
     [key: number]: FrameMetadata;
   }
+  filteredFrameIds: number[];
 }
 
 const initialState: AppState = {
@@ -38,6 +52,7 @@ const initialState: AppState = {
   domains: { },
   frames: { },
   error: null,
+  filteredFrameIds: [],
 };
 
 const appSlice = createSlice({
@@ -46,6 +61,18 @@ const appSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    filterApps: (state, action) => {
+      const query = action.payload.toLowerCase();
+      state.filteredFrameIds = [];
+      for (const frameId in state.frames) {
+        if (
+          state.frames[frameId].name.toLowerCase().indexOf(query) > -1 ||
+          state.frames[frameId].tagline?.toLowerCase().indexOf(query) > -1
+        ) {
+          state.filteredFrameIds.push(Number(frameId));
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -70,9 +97,16 @@ const appSlice = createSlice({
           state.loading[frameId] = false;
         });
         state.error = action.error.message || null;
-      });
+      })
+      .addCase(fetchAppByDomain.fulfilled, (state, action) => {
+        const app = action.payload as AppMetadata;
+        console.log('app', app);
+        state.frames[app.frameId] = app.frame;
+        state.domains[app.frameId] = app.domain;
+      })
   },
 });
 
 export const { clearError } = appSlice.actions;
+export const { filterApps } = appSlice.actions;
 export default appSlice.reducer;

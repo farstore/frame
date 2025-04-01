@@ -26,7 +26,7 @@ import {
 } from "~/constants/abi-farstore";
 
 import {
-  getFrame,
+  getAppByDomain,
   verifyFrame,
   getNullAddress,
 } from "~/lib/data";
@@ -40,6 +40,7 @@ export default function List() {
 
   const [domain, setDomain] = useState<string>('');
   const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [tagline, setTagline] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
 
   const [listing, setListing] = useState<boolean>(false);
@@ -93,8 +94,8 @@ export default function List() {
 
   useEffect(() => {
     if (frameId && isConfirmed) {
-      getFrame(domain).then(() => {
-        router.push("/");
+      getAppByDomain(domain).then(() => {
+        router.push(`/app/${domain}`);
       });
     }
   }, [router, frameId, domain, isConfirmed]);
@@ -132,9 +133,10 @@ export default function List() {
   };
 
   const lookup = async (domain: string) => {
-    const { name, iconUrl } = await getFrame(domain);
+    const { frame: { name, iconUrl, tagline } } = await getAppByDomain(domain);
     setName(name);
     setIconUrl(iconUrl);
+    setTagline(tagline);
   };
 
   const check = async () => {
@@ -167,6 +169,7 @@ export default function List() {
             <AppTile
               owner={getNullAddress()}
               iconUrl={iconUrl}
+              tagline={tagline}
               name={name}
             />
           </div>

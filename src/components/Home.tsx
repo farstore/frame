@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from "react";
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import sdk, { Context } from "@farcaster/frame-sdk";
 import {
@@ -15,8 +15,9 @@ import {
 } from "~/constants/abi-farstore";
 import {
   fetchApps,
+  filterApps,
 } from "~/store/slices/appSlice";
-import { Dispatch } from "~/store";
+import { Dispatch, State } from "~/store";
 
 import AppTileContainer from "./AppTileContainer";
 
@@ -25,8 +26,8 @@ export default function Home() {
   const [context, setContext] = useState<Context.FrameContext>();
   const [cacheBust, setCacheBust] = useState(0);
   const [frameAdded, setFrameAdded] = useState(false);
-
-  const [pages, setPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const filteredFrameIds = useSelector((state: State) => state.app.filteredFrameIds);
 
   const dispatch = useDispatch<Dispatch>();
 
@@ -48,6 +49,16 @@ export default function Home() {
     }
   }, [isSDKLoaded]);
 
+  useEffect(() => {
+    dispatch(fetchApps([]));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (search.length > 0) {
+      dispatch(filterApps(search));
+    }
+  }, [dispatch, search]);
+
   const addFrame = async () => {
     try {
       setFrameAdded(true);
@@ -65,21 +76,7 @@ export default function Home() {
     args: [],
   });
   const listedRes = ((getListedRes || []) as bigint[]).map(id => Number(id));
-  const numListed = listedRes.length;
-  const max = Math.min(10 * pages, numListed);
-  const frameIds = listedRes.sort((a, b) => a > b ? -1 : 1).slice(0, max);
-
-  useEffect(() => {
-    if (frameIds.length > 0) {
-      console.log('calling');
-      dispatch(fetchApps(frameIds));
-    }
-  }, [dispatch, frameIds]);
-
-  const loadMore = () => {
-    setPages(pages + 1);
-  };
-
+  const frameIds = search.length > 0 ? filteredFrameIds : listedRes.sort((a, b) => a > b ? -1 : 1);
 
   const addButton = !!context ? (
     <div
@@ -94,7 +91,7 @@ export default function Home() {
       {
         !added &&
         <div className="italic">
-          <p>Get notified as new apps launch:</p>
+          <p className="mb-2">Follow the latest launches:</p>
           <Button onClick={addFrame}>Add Farstore</Button>
         </div>
       }
@@ -114,7 +111,7 @@ export default function Home() {
   const openUrl = useCallback((url: string) => {
     const normalizedUrl = url.indexOf('://') > -1 ? url : `https://${url}`;
     if (!!context) {
-      sdk.actions.openUrl(`https://warpcast.com/~/frames/launch?url=${encodeURIComponent(normalizedUrl)}`);
+      sdk.actions.openUrl(`https://warpcast.com/~/mini-apps/launch?url=${encodeURIComponent(normalizedUrl)}`);
     } else {
       window.open(normalizedUrl, '_blank');
     }
@@ -125,6 +122,15 @@ export default function Home() {
       <div className="mx-auto py-4">
         <h1 className="text-2xl font-bold text-center mb-4 mt-4">Discover Farcaster Apps</h1>
         {addButton}
+        <input
+          type="text"
+          name="search"
+          placeholder="search apps"
+          className="mt-4 text-input"
+          onChange={(e) => setSearch(e.target.value)}
+          value={search}
+          style={{ padding: '.5em 1em', width: '100%' }}
+        />
         <div className="flex my-4 font-bold">
           <div className="flex-grow">Recently added apps</div>
           <div className="flex-shrink"><Link href="/list" style={{ color: '#7C65C1', textDecoration: 'none' }}>Submit →</Link></div>
@@ -135,12 +141,6 @@ export default function Home() {
               <AppTileContainer frameId={id} openUrl={openUrl} />
             </div>
           ))
-        }
-        {
-          numListed != frameIds.length &&
-          <button type="button" className="secondary-button mt-2 mb-10" onClick={loadMore}>
-            Load more
-          </button>
         }
       </div>
     </div>

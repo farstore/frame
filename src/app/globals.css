@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
 }
 
@@ -99,12 +99,28 @@ h1, h2 {
 
 a { text-decoration: underline; }
 
+.listing-width {
+  max-width:  375px;
+}
+.listing-height {
+  max-height: 250px;
+}
+@media(min-width: 600px) {
+  .listing-width {
+    max-width:  600px;
+  }
+  .listing-height {
+    max-height: 400px;
+  }
+}
+
 .ui-island {
   border-radius: 12px;
   background-color: #fff;
   transition: box-shadow 0.3s ease;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 @media (prefers-color-scheme: dark) {
   .ui-island {
     background-color: #303030;

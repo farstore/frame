@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {
   useReadContract,
 } from "wagmi";
@@ -43,8 +44,21 @@ export default function AppTileContainer({
   }
 
   return (
-    <div onClick={() => openUrl(frame.homeUrl || domain)} style={{ cursor: 'pointer' }}>
-      <AppTile iconUrl={frame.iconUrl} name={frame.name} owner={owner} />
-    </div>
+    <Link
+      href={`/app/${domain}`}
+      style={{ cursor: 'pointer', textDecoration: 'none' }}
+    >
+      <AppTile
+        name={frame.name}
+        iconUrl={frame.iconUrl}
+        tagline={frame.tagline}
+        owner={owner}
+        openAction={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+          e.stopPropagation();
+          e.preventDefault();
+          openUrl(frame.homeUrl || domain);
+        }}
+      />
+    </Link>
   );
 }
