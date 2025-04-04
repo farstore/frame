@@ -22,13 +22,14 @@ export default function AppTileContainer({
   frameDomain,
   openUrl
 }: {
-  frameId?: number;
+  frameId: number;
   frameDomain?: string;
   openUrl: (url: string) => void;
 }) {
 
-  const domainRes = useSelector((state: State) => state.app.domains[frameId as number]);
-  const frame = useSelector((state: State) => state.app.frames[frameId as number]);
+  const domainRes = useSelector((state: State) => state.app.domains[frameId]);
+  const frame = useSelector((state: State) => state.app.frames[frameId]);
+  const liquidity = useSelector((state: State) => state.app.liquidity[frameId]);
   const domain = (frameDomain || domainRes || '') as string;
 
   const { data: ownerRes } = useReadContract({
@@ -51,8 +52,8 @@ export default function AppTileContainer({
       <AppTile
         name={frame.name}
         iconUrl={frame.iconUrl}
-        tagline={frame.tagline}
         owner={owner}
+        liquidity={liquidity}
         openAction={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
           e.stopPropagation();
           e.preventDefault();

@@ -40,7 +40,6 @@ export default function List() {
 
   const [domain, setDomain] = useState<string>('');
   const [iconUrl, setIconUrl] = useState<string | null>(null);
-  const [tagline, setTagline] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
 
   const [listing, setListing] = useState<boolean>(false);
@@ -133,13 +132,14 @@ export default function List() {
   };
 
   const lookup = async (domain: string) => {
-    const { frame: { name, iconUrl, tagline } } = await getAppByDomain(domain);
+    const { frame: { name, iconUrl } } = await getAppByDomain(domain);
     setName(name);
     setIconUrl(iconUrl);
-    setTagline(tagline);
   };
 
   const check = async () => {
+    router.push('https://www.qrcoin.fun');
+    return;
     setError(null);
     try {
       setChecking(true);
@@ -169,8 +169,8 @@ export default function List() {
             <AppTile
               owner={getNullAddress()}
               iconUrl={iconUrl}
-              tagline={tagline}
               name={name}
+              liquidity={0}
             />
           </div>
         </div>

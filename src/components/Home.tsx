@@ -4,18 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 
 import sdk, { Context } from "@farcaster/frame-sdk";
-import {
-  useReadContract,
-} from "wagmi";
-import { Address } from "viem";
 import { Button } from "~/components/ui/Button";
-import {
-  farstoreAbi,
-  farstoreAddress,
-} from "~/constants/abi-farstore";
 import {
   fetchApps,
   filterApps,
+  sortApps,
 } from "~/store/slices/appSlice";
 import { Dispatch, State } from "~/store";
 
@@ -27,7 +20,10 @@ export default function Home() {
   const [cacheBust, setCacheBust] = useState(0);
   const [frameAdded, setFrameAdded] = useState(false);
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('liquid');
   const filteredFrameIds = useSelector((state: State) => state.app.filteredFrameIds);
+  const sortedFrameIds = useSelector((state: State) => state.app.sortedFrameIds);
+  const count = useSelector((state: State) => state.app.count);
 
   const dispatch = useDispatch<Dispatch>();
 
@@ -59,6 +55,10 @@ export default function Home() {
     }
   }, [dispatch, search]);
 
+  useEffect(() => {
+    dispatch(sortApps(sort));
+  }, [dispatch, sort, count]);
+
   const addFrame = async () => {
     try {
       setFrameAdded(true);
@@ -69,14 +69,7 @@ export default function Home() {
     }
   };
 
-  const { data: getListedRes } = useReadContract({
-    abi: farstoreAbi,
-    address: farstoreAddress as Address,
-    functionName: "getListedFrames",
-    args: [],
-  });
-  const listedRes = ((getListedRes || []) as bigint[]).map(id => Number(id));
-  const frameIds = search.length > 0 ? filteredFrameIds : listedRes.sort((a, b) => a > b ? -1 : 1);
+  const frameIds = search.length > 0 ? filteredFrameIds : sortedFrameIds;
 
   const addButton = !!context ? (
     <div
@@ -111,7 +104,11 @@ export default function Home() {
   const openUrl = useCallback((url: string) => {
     const normalizedUrl = url.indexOf('://') > -1 ? url : `https://${url}`;
     if (!!context) {
-      sdk.actions.openUrl(`https://warpcast.com/~/mini-apps/launch?url=${encodeURIComponent(normalizedUrl)}`);
+      if (window.navigator.userAgent == 'warpcast') {
+        sdk.actions.openUrl(`https://warpcast.com/~/frames/launch?url=${encodeURIComponent(normalizedUrl)}`);
+      } else {
+        sdk.actions.openUrl(`https://warpcast.com/~/mini-apps/launch?url=${encodeURIComponent(normalizedUrl)}`);
+      }
     } else {
       window.open(normalizedUrl, '_blank');
     }
@@ -132,7 +129,19 @@ export default function Home() {
           style={{ padding: '.5em 1em', width: '100%' }}
         />
         <div className="flex my-4 font-bold">
-          <div className="flex-grow">Recently added apps</div>
+          <div className="flex-grow">
+            Sort by:
+            <select
+              onChange={(e) => setSort(e.target.value)}
+              style={{
+                marginLeft: ".5em",
+                backgroundColor: "transparent"
+              }}
+            >
+              <option value="liquid">Most liquid</option>
+              <option value="recent">Most recent</option>
+            </select>
+          </div>
           <div className="flex-shrink"><Link href="/list" style={{ color: '#7C65C1', textDecoration: 'none' }}>Submit →</Link></div>
         </div>
         {

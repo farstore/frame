@@ -5,14 +5,14 @@ import { Button } from "~/components/ui/Button";
 export default function AppTile({
   iconUrl,
   name,
-  tagline,
   owner,
+  liquidity,
   openAction,
 }: {
   iconUrl: string | null;
   name: string | null;
-  tagline: string | null;
   owner: string;
+  liquidity: number;
   openAction?: React.MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
@@ -37,13 +37,13 @@ export default function AppTile({
       <div className="flex-grow" style={{ marginLeft: "1em", padding: '.25em 0' }}>
         <div style={{ fontWeight: "bold" }}>{name || (<i>loading</i>)}</div>
         <div style={{ fontSize: ".75em" }}>
+          <span>By <Username address={owner || getNullAddress()} /></span>
           {
-            tagline != null &&
-            <div>{tagline.length > 50 ? `${tagline.substr(0, 50)}...` : tagline}</div>
-          }
-          {
-            owner != getNullAddress() &&
-            <span> by <Username address={owner || ''} /></span>
+            liquidity > 0 ? (
+              <div>{liquidity.toFixed(2)} ETH in token</div>
+            ) : (
+              <div>No token</div>
+            )
           }
         </div>
       </div>

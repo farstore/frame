@@ -42,6 +42,7 @@ export default function Listing({ domain }: { domain: string; }) {
   });
   const frameId = Number(frameIdRes as bigint);
   const frame = useSelector((state: State) => state.app.frames[frameId]);
+  const token = useSelector((state: State) => state.app.tokens[frameId]);
 
   const { data: ownerRes } = useReadContract({
     abi: farstoreAbi,
@@ -113,7 +114,11 @@ export default function Listing({ domain }: { domain: string; }) {
   const openUrl = useCallback((url: string) => {
     const normalizedUrl = url.indexOf('://') > -1 ? url : `https://${url}`;
     if (!!context) {
-      sdk.actions.openUrl(`https://warpcast.com/~/frames/launch?url=${encodeURIComponent(normalizedUrl)}`);
+      if (window.navigator.userAgent == 'warpcast') {
+        sdk.actions.openUrl(`https://warpcast.com/~/frames/launch?url=${encodeURIComponent(normalizedUrl)}`);
+      } else {
+        sdk.actions.openUrl(`https://warpcast.com/~/mini-apps/launch?url=${encodeURIComponent(normalizedUrl)}`);
+      }
     } else {
       window.open(normalizedUrl, '_blank');
     }
@@ -126,13 +131,27 @@ export default function Listing({ domain }: { domain: string; }) {
   const banner = frame.imageUrl || frame.iconUrl;
   const tagline = frame.tagline;
 
+  const options = [
+    "embed=1",
+    "loadChartSettings=0",
+    "trades=0",
+    "tabs=0",
+    "info=0",
+    "chartLeftToolbar=0",
+    "chartTheme=dark",
+    "theme=dark",
+    "chartStyle=1",
+    "chartType=usd",
+    "interval=60",
+  ];
+
   return (
-    <div className="max-w-[600px] mx-auto px-4">
+    <div className="max-w-[700px] mx-auto px-4">
       <div className="mx-auto py-4">
         {addButton}
         {
           frame &&
-          <div className="listing-width" style={{ margin: '0 auto' }}>
+          <div className="listing-width mb-4" style={{ margin: '0 auto' }}>
             <div
               style={{
                 position: 'relative',
@@ -156,6 +175,7 @@ export default function Listing({ domain }: { domain: string; }) {
                 }}
               />
               <img
+                alt="app-banner"
                 className='listing-height'
                 style={{ margin: '0 auto', maxWidth: '100%', borderRadius: '12px' }}
                 src={banner}
@@ -164,6 +184,7 @@ export default function Listing({ domain }: { domain: string; }) {
             <div className="flex my-4" style={{ alignItems: "center" }}>
               <div className="flex-grow">
                 <div style={{ fontSize: '1.75em' }}>{frame.name}</div>
+                <div>by <Username address={owner || ''} /></div>
               </div>
               <div className="flex-shrink">
                 <Button onClick={() => openUrl(frame.homeUrl)}>Open</Button>
@@ -175,8 +196,21 @@ export default function Listing({ domain }: { domain: string; }) {
                 <div>{tagline}</div>
               }
             </div>
-            <div>By <Username address={owner || ''} /></div>
           </div>
+        }
+        <br />
+        {
+          token ? (
+            <div style={{ paddingBottom: '3em' }}>
+              <iframe
+                className="dexscreener-iframe"
+                style={{ borderRadius: '12px' }}
+                src={`https://dexscreener.com/base/${token}?${options.join('&')}`}
+              />
+            </div>
+          ) : (
+            null
+          )
         }
       </div>
     </div>

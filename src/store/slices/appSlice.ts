@@ -41,18 +41,30 @@ export interface AppState {
   domains: {
     [key: number]: string;
   },
+  tokens: {
+    [key: number]: string | null;
+  },
+  liquidity: {
+    [key: number]: number;
+  },
   frames: {
     [key: number]: FrameMetadata;
   }
   filteredFrameIds: number[];
+  sortedFrameIds: number[];
+  count: number;
 }
 
 const initialState: AppState = {
   loading: { },
   domains: { },
+  tokens: { },
+  liquidity: { },
   frames: { },
   error: null,
   filteredFrameIds: [],
+  sortedFrameIds: [],
+  count: 0
 };
 
 const appSlice = createSlice({
@@ -74,6 +86,16 @@ const appSlice = createSlice({
         }
       }
     },
+    sortApps: (state, action) => {
+      const sort = action.payload;
+      state.sortedFrameIds = Object.keys(state.frames).map(id => Number(id)).sort((a, b) => {
+        if (sort == 'liquid') {
+          return state.liquidity[a] >= state.liquidity[b] ? -1 : 1;
+        } else {
+          return a > b ? -1 : 1;
+        }
+      });
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -90,7 +112,10 @@ const appSlice = createSlice({
         action.payload.forEach((app: AppMetadata) => {
           state.frames[app.frameId] = app.frame;
           state.domains[app.frameId] = app.domain;
+          state.tokens[app.frameId] = app.token;
+          state.liquidity[app.frameId] = app.liquidity;
         })
+        state.count = Object.keys(state.frames).length;
       })
       .addCase(fetchApps.rejected, (state, action) => {
         action.meta.arg.map(frameId => {
@@ -100,13 +125,16 @@ const appSlice = createSlice({
       })
       .addCase(fetchAppByDomain.fulfilled, (state, action) => {
         const app = action.payload as AppMetadata;
-        console.log('app', app);
         state.frames[app.frameId] = app.frame;
         state.domains[app.frameId] = app.domain;
+        state.tokens[app.frameId] = app.token;
+        state.liquidity[app.frameId] = app.liquidity;
+        state.count = Object.keys(state.frames).length;
       })
   },
 });
 
 export const { clearError } = appSlice.actions;
 export const { filterApps } = appSlice.actions;
+export const { sortApps } = appSlice.actions;
 export default appSlice.reducer;

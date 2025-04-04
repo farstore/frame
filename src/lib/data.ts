@@ -13,6 +13,8 @@ export interface AppMetadata {
   domain: string;
   frameId: number;
   frame: FrameMetadata;
+  token: string | null;
+  liquidity: number;
 }
 
 interface FrameVerification {
