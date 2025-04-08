@@ -138,8 +138,6 @@ export default function List() {
   };
 
   const check = async () => {
-    router.push('https://www.qrcoin.fun');
-    return;
     setError(null);
     try {
       setChecking(true);
