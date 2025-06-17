@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Address } from "viem";
 
+
 export interface FrameMetadata {
   name: string;
   iconUrl: string;
@@ -10,17 +11,63 @@ export interface FrameMetadata {
 }
 
 export interface AppMetadata {
+  symbol: string;
   domain: string;
-  frameId: number;
   frame: FrameMetadata;
+  owner: string;
   token: string | null;
   liquidity: number;
+  funding: number;
+  createTime: number;
+}
+
+export interface NeynarUser {
+  fid: number;
+  username: string;
+  display_name: string;
+  pfp_url: string;
+  follower_count: number;
+  following_count: number;
+  power_badge: boolean;
+  profile: {
+    bio: {
+      text: string;
+    }
+  }
+  custody_address: string;
+  verified_addresses: {
+    eth_addresses: string[];
+    primary: {
+      eth_address: string | null;
+    }
+  }
+}
+
+export interface UserMetadata {
+  address: string;
+  user: NeynarUser;
 }
 
 interface FrameVerification {
   domain: string;
-  eligibleOwners: string[];
+  owner: string;
   signature: string;
+}
+
+export interface AppReviewerCast {
+  timestamp: string;
+  hash: string;
+  text: string;
+}
+
+export interface AppReviewer {
+  fid: string;
+  username: string;
+  recentCasts: AppReviewerCast[];
+}
+
+export interface AppReviewResponse {
+  [promoters: string]: AppReviewer[];
 }
 
 export const getAppByDomain = async (domain: string) => {
@@ -28,14 +75,23 @@ export const getAppByDomain = async (domain: string) => {
   return data as AppMetadata;
 };
 
-export const getApps = async (frameIds: string) => {
-  const { data } = await axios.get(`/api/apps?frameIds=${frameIds}`);
+export const getAppReviews = async (domain: string) => {
+  const { data } = await axios.get(`/api/app-reviews?domain=${domain}`);
+  return data as AppReviewResponse;
+};
+
+export const getAllApps = async () => {
+  const { data } = await axios.get('/api/apps');
   return data as AppMetadata[];
 };
 
+export const getUsers = async (addresses: string) => {
+  const { data } = await axios.get(`/api/users?addresses=${addresses}`);
+  return data as UserMetadata[];
+}
+
 export const verifyFrame = async (domain: string) => {
   const { data } = await axios.get(`/api/verify-frame?domain=${domain}`);
-  console.log(data);
   return data as FrameVerification;
 };
 

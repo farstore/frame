@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from "react";
+import { useDispatch } from 'react-redux';
 import { Address } from "viem";
 import { useModal } from "connectkit";
 import {
@@ -24,22 +25,25 @@ import {
   farstoreAbi,
   farstoreAddress,
 } from "~/constants/abi-farstore";
-
+import { fetchUsers } from "~/store/slices/userSlice";
 import {
   getAppByDomain,
   verifyFrame,
   getNullAddress,
 } from "~/lib/data";
 
-import AppTile from "./AppTile";
+import { Dispatch } from "~/store";
+import Username from "./Username";
 
 export default function List() {
   const { setOpen } = useModal();
   const { address: connectedAddress } = useAccount();
   const router = useRouter();
+  const dispatch = useDispatch<Dispatch>();
 
   const [domain, setDomain] = useState<string>('');
   const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [owner, setOwner] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
 
   const [listing, setListing] = useState<boolean>(false);
@@ -76,36 +80,42 @@ export default function List() {
       setChecking(false);
       setTimeout(() => setError(writeError.message.split('\n')[0]), 1);
     } else if (isConfirmed) {
-      setListing(false);
+      // setListing(false);
       setChecking(false);
       setCacheBust(prev => prev + 1);
     }
   }, [writeError, isConfirmed]);
 
-  const { data: frameIdRes } = useReadContract({
+  const { data: appIdRes } = useReadContract({
     abi: farstoreAbi,
     address: farstoreAddress as Address,
-    functionName: "getId",
-    args: [domain],
+    functionName: "getAppIdByDomain",
+    args: [loaded ? domain : ""],
     scopeKey: `create-${cacheBust}`,
   });
-  const frameId = Number((frameIdRes || 0n) as bigint);
+  const appId = Number((appIdRes || 0n) as bigint);
 
   useEffect(() => {
-    if (frameId && isConfirmed) {
+    if (owner && owner != getNullAddress()) {
+      dispatch(fetchUsers([owner]));
+    }
+  }, [dispatch, owner]);
+
+  useEffect(() => {
+    if (appId && isConfirmed) {
       getAppByDomain(domain).then(() => {
-        router.push(`/app/${domain}`);
+        router.push(`/${domain}`);
       });
     }
-  }, [router, frameId, domain, isConfirmed]);
+  }, [router, appId, domain, isConfirmed]);
 
   const list = async () => {
     setError(null);
     setListing(true);
     try {
-      const { eligibleOwners, signature } = await verifyFrame(domain);
-      if (!connectedAddress || eligibleOwners.filter(a => a.toLowerCase() == connectedAddress.toLowerCase()).length == 0) {
-        throw new Error('Your address is not linked to the Farcaster account that owns this app');
+      const { owner, signature } = await verifyFrame(domain);
+      if (!connectedAddress) {
+        throw new Error('Connect a wallet to proceed');
       }
       writeContract({
         abi: farstoreVerifierAbi,
@@ -113,11 +123,8 @@ export default function List() {
         functionName: "list",
         args: [
           domain,
-          eligibleOwners,
+          owner,
           signature,
-          getNullAddress(),
-          [],
-          [],
         ],
         chainId: base.id,
       });
@@ -133,8 +140,10 @@ export default function List() {
 
   const lookup = async (domain: string) => {
     const { frame: { name, iconUrl } } = await getAppByDomain(domain);
+    const { owner } = await verifyFrame(domain);
     setName(name);
     setIconUrl(iconUrl);
+    setOwner(owner);
   };
 
   const check = async () => {
@@ -153,7 +162,7 @@ export default function List() {
   }
 
   return (
-    <div className="max-w-[500px] mx-auto py-4 px-4">
+    <div className="max-w-[400px] mx-auto py-4 px-4">
       <h1 className="text-2xl font-bold text-center mb-4 mt-4">Submit App</h1>
       {
         (checking || loaded) &&
@@ -164,26 +173,40 @@ export default function List() {
               padding: '.5em',
             }}
           >
-            <AppTile
-              owner={getNullAddress()}
-              iconUrl={iconUrl}
-              name={name}
-              liquidity={0}
-            />
+            <div
+              style={{
+                width: "8em",
+                height: "8em",
+                margin: '0 auto',
+                alignItems: 'center',
+                justifyContent: 'center',
+                // borderRadius: '12px',
+                // border: '1px solid #ccc',
+              }}
+            >
+              <img
+                className="ui-island"
+                src={iconUrl || '/fallback-icon.png'}
+                style={{ borderRadius: '12px', maxHeight: '100%' }}
+                alt="app-logo"
+              />
+            </div>
+            <br />
+            <h2>{name}</h2>
+            <div>by <Username address={owner || getNullAddress()} /></div>
           </div>
         </div>
       }
       {
         !loaded &&
         <div>
-          <p>Enter the url of your app</p>
           <div className="mt-2">
             <input
               type="text"
               value={domain}
               onChange={e => setDomain(e.target.value)}
               disabled={checking}
-              placeholder="e.g. warpcast.com"
+              placeholder="app url (e.g. far.store)"
               className="text-input"
               style={{ margin: '1em 0' }}
             />
@@ -200,14 +223,13 @@ export default function List() {
       {
         loaded &&
         <div className="mt-4">
-          <p>This will register your app onchain</p>
           <button
             className="claim-button mt-2"
             disabled={listing}
             onClick={connectedAddress ? list : () => setOpen(true)}
           >
             {
-              connectedAddress ? 'Submit' : 'Connect Wallet and Submit'
+              connectedAddress ? 'Submit' : 'Connect Wallet'
             }
           </button>
         </div>

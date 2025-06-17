@@ -1,16 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from "axios";
 
-import { AppMetadata, FrameMetadata, getApps, getAppByDomain } from '~/lib/data';
-import { State } from '~/store';
+import { AppMetadata, FrameMetadata, getAllApps, getAppByDomain } from '~/lib/data';
+// import { State } from '~/store';
+import { fetchUsers } from './userSlice';
 
 // Async Thunk to Fetch Data
-export const fetchApps = createAsyncThunk<AppMetadata[], number[]>('app/fetchApps', async (frameIds, { getState }) => {
-  const state = getState() as State;
-  const missingFrameIds = frameIds.filter((frameId) => state.app.frames[frameId] == undefined);
+export const fetchAllApps = createAsyncThunk<AppMetadata[], void>('app/fetchAllApps', async (_, { dispatch }) => {
   try {
-    const result = await getApps(missingFrameIds.join(','));
-    return result;
+    const results = await getAllApps();
+    if (results.length > 0) {
+      dispatch(fetchUsers(results.map(r => r.owner)));
+    }
+    return results;
   } catch (e) {
     if (axios.isAxiosError(e)) {
       throw new Error(e.response?.data?.error);
@@ -35,35 +37,43 @@ export const fetchAppByDomain = createAsyncThunk<AppMetadata, string>('app/fetch
 
 export interface AppState {
   error: string | null;
-  loading: {
-    [key: number]: boolean;
-  },
-  domains: {
-    [key: number]: string;
-  },
   tokens: {
-    [key: number]: string | null;
+    [key: string]: string | null;
+  },
+  owners: {
+    [key: string]: string;
+  },
+  symbols: {
+    [key: string]: string;
   },
   liquidity: {
-    [key: number]: number;
+    [key: string]: number;
+  },
+  createTimes: {
+    [key: string]: number;
+  },
+  funding: {
+    [key: string]: number;
   },
   frames: {
-    [key: number]: FrameMetadata;
+    [key: string]: FrameMetadata;
   }
-  filteredFrameIds: number[];
-  sortedFrameIds: number[];
+  filteredDomains: string[];
+  sortedDomains: string[];
   count: number;
 }
 
 const initialState: AppState = {
-  loading: { },
-  domains: { },
   tokens: { },
+  owners: { },
+  symbols: { },
   liquidity: { },
+  funding: { },
+  createTimes: { },
   frames: { },
   error: null,
-  filteredFrameIds: [],
-  sortedFrameIds: [],
+  filteredDomains: [],
+  sortedDomains: [],
   count: 0
 };
 
@@ -75,60 +85,62 @@ const appSlice = createSlice({
       state.error = null;
     },
     filterApps: (state, action) => {
-      const query = action.payload.toLowerCase();
-      state.filteredFrameIds = [];
-      for (const frameId in state.frames) {
-        if (
-          state.frames[frameId].name.toLowerCase().indexOf(query) > -1 ||
-          state.frames[frameId].tagline?.toLowerCase().indexOf(query) > -1
-        ) {
-          state.filteredFrameIds.push(Number(frameId));
+      const { filter } = action.payload;
+      const search = action.payload.search.toLowerCase();
+      const domains = Object.keys(state.frames).filter(domain => {
+        if (search.length == 0) {
+          return true;
         }
-      }
-    },
-    sortApps: (state, action) => {
-      const sort = action.payload;
-      state.sortedFrameIds = Object.keys(state.frames).map(id => Number(id)).sort((a, b) => {
-        if (sort == 'liquid') {
-          return state.liquidity[a] >= state.liquidity[b] ? -1 : 1;
-        } else {
-          return a > b ? -1 : 1;
-        }
+        return state.frames[domain].name.toLowerCase().indexOf(search) > -1;
       });
+      if (filter == 'trade') {
+        state.filteredDomains = domains
+        .filter(a => state.liquidity[a] > 0)
+        .sort((a, b) => {
+          if (state.liquidity[a] == state.liquidity[b]) {
+            return state.createTimes[a] > state.createTimes[b] ? -1 : 1;
+          }
+          return state.liquidity[a] > state.liquidity[b] ? -1 : 1
+        });
+      } else if (filter == 'fund') {
+        state.filteredDomains = domains
+        .filter(a => state.liquidity[a] == 0)
+        .sort((a, b) => {
+          if (state.funding[a] == state.funding[b]) {
+            return state.createTimes[a] > state.createTimes[b] ? -1 : 1;
+          }
+          return state.funding[a] > state.funding[b] ? -1 : 1;
+        });
+      } else {
+        // search
+        state.filteredDomains = domains
+        .sort((a, b) => state.frames[a].name < state.frames[b].name ? -1 : 1);
+      }
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchApps.pending, (state, action) => {
-        action.meta.arg.map(frameId => {
-          state.loading[frameId] = true;
-        });
-        state.error = null;
-      })
-      .addCase(fetchApps.fulfilled, (state, action) => {
-        action.meta.arg.map(frameId => {
-          state.loading[frameId] = false;
-        });
+      .addCase(fetchAllApps.fulfilled, (state, action) => {
         action.payload.forEach((app: AppMetadata) => {
-          state.frames[app.frameId] = app.frame;
-          state.domains[app.frameId] = app.domain;
-          state.tokens[app.frameId] = app.token;
-          state.liquidity[app.frameId] = app.liquidity;
+          state.frames[app.domain] = app.frame;
+          state.tokens[app.domain] = app.token;
+          state.owners[app.domain] = app.owner;
+          state.symbols[app.domain] = app.symbol;
+          state.liquidity[app.domain] = app.liquidity;
+          state.funding[app.domain] = app.funding;
+          state.createTimes[app.domain] = app.createTime;
         })
         state.count = Object.keys(state.frames).length;
       })
-      .addCase(fetchApps.rejected, (state, action) => {
-        action.meta.arg.map(frameId => {
-          state.loading[frameId] = false;
-        });
-        state.error = action.error.message || null;
-      })
       .addCase(fetchAppByDomain.fulfilled, (state, action) => {
         const app = action.payload as AppMetadata;
-        state.frames[app.frameId] = app.frame;
-        state.domains[app.frameId] = app.domain;
-        state.tokens[app.frameId] = app.token;
-        state.liquidity[app.frameId] = app.liquidity;
+        state.frames[app.domain] = app.frame;
+        state.tokens[app.domain] = app.token;
+        state.owners[app.domain] = app.owner;
+        state.symbols[app.domain] = app.symbol;
+        state.liquidity[app.domain] = app.liquidity;
+        state.funding[app.domain] = app.funding;
+        state.createTimes[app.domain] = app.createTime;
         state.count = Object.keys(state.frames).length;
       })
   },
@@ -136,5 +148,4 @@ const appSlice = createSlice({
 
 export const { clearError } = appSlice.actions;
 export const { filterApps } = appSlice.actions;
-export const { sortApps } = appSlice.actions;
 export default appSlice.reducer;

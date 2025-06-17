@@ -55,8 +55,8 @@ button {
   cursor: pointer;
   font-size: 1em;
   border-radius: 12px;
-  border: 1px solid #ccc;
   background-color: black;
+  border: 1px solid black;
   color: white;
   font-weight: bold;
   padding: .5em 1em;
@@ -64,15 +64,17 @@ button {
 }
 
 .secondary-button {
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   width: 100%;
   cursor: pointer;
-  font-size: 1em;
-  border-radius: 12px;
-  border: none;
-  background-color: #ccc;
-  color: black;
-  font-weight: bold;
   padding: .5em 1em;
+}
+.secondary-button.selected {
+  border: 1px solid #ccc;
+  font-weight: bold;
+  box-shadow: none;
 }
 
 .claim-button:disabled {
@@ -83,13 +85,18 @@ button {
 .text-input {
   font-family: "Helvetica Neue", Helvetica, sans-serif;
   box-sizing: border-box;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 12px;
-  border: 1px solid #ccc;
   font-size: 1em;
   background-color: #fff;
-  padding: 1em;
+  padding: .5em 1em;
   width: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+.text-input:focus {
+  box-shadow: none;
+  border: 1px solid #ccc;
 }
 
 h1, h2 {
@@ -98,6 +105,10 @@ h1, h2 {
 }
 
 a { text-decoration: underline; }
+
+.listing-fixed-width {
+  max-width:  375px;
+}
 
 .listing-width {
   max-width:  375px;
@@ -131,6 +142,7 @@ a { text-decoration: underline; }
   .claim-button {
     background-color: #303030;
     box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+    border: 1px solid #ccc;
   }
 }
 
@@ -149,6 +161,7 @@ a { text-decoration: underline; }
 .dexscreener-iframe {
   height: 400px;
   width: 375px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -156,4 +169,26 @@ a { text-decoration: underline; }
   .dexscreener-iframe {
     width: 600px;
   }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner-bg {
+  background-image: url('/load.webp');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  min-height: 1em;
+  min-width: 1em;
 }

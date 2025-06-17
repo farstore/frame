@@ -1,14 +1,12 @@
 "use client";
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 
 import sdk, { Context } from "@farcaster/frame-sdk";
-import { Button } from "~/components/ui/Button";
 import {
-  fetchApps,
+  fetchAllApps,
   filterApps,
-  sortApps,
 } from "~/store/slices/appSlice";
 import { Dispatch, State } from "~/store";
 
@@ -20,15 +18,15 @@ export default function Home() {
   const [cacheBust, setCacheBust] = useState(0);
   const [frameAdded, setFrameAdded] = useState(false);
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('liquid');
-  const filteredFrameIds = useSelector((state: State) => state.app.filteredFrameIds);
-  const sortedFrameIds = useSelector((state: State) => state.app.sortedFrameIds);
+  const [filter, setFilter] = useState('fund');
+  const [loaded, setLoaded] = useState(false);
+  const domains = useSelector((state: State) => state.app.filteredDomains);
   const count = useSelector((state: State) => state.app.count);
-
+  console.log(domains);
   const dispatch = useDispatch<Dispatch>();
 
   const added = frameAdded || (context && context.client && context.client.added);
-  const notifications = frameAdded || (context && context.client && context.client.notificationDetails);
+  // const notifications = frameAdded || (context && context.client && context.client.notificationDetails);
 
   useEffect(() => {
     const load = async () => {
@@ -46,18 +44,18 @@ export default function Home() {
   }, [isSDKLoaded]);
 
   useEffect(() => {
-    dispatch(fetchApps([]));
+    dispatch(fetchAllApps());
   }, [dispatch]);
 
   useEffect(() => {
-    if (search.length > 0) {
-      dispatch(filterApps(search));
-    }
-  }, [dispatch, search]);
+    dispatch(filterApps({ filter, search, sort: '' }));
+  }, [dispatch, search, filter, count]);
 
   useEffect(() => {
-    dispatch(sortApps(sort));
-  }, [dispatch, sort, count]);
+    if (count > 0 && !loaded) {
+      setLoaded(true);
+    }
+  }, [count, loaded]);
 
   const addFrame = async () => {
     try {
@@ -68,86 +66,71 @@ export default function Home() {
       console.log(e);
     }
   };
-
-  const frameIds = search.length > 0 ? filteredFrameIds : sortedFrameIds;
-
-  const addButton = !!context ? (
-    <div
-      style={{
-        display: !added || !notifications ? 'block' : 'none',
-        textAlign: "center",
-        padding: '1em 1em 2em 1em',
-        borderRadius: '12px',
-        marginBottom: '1em',
-      }}
-    >
-      {
-        !added &&
-        <div className="italic">
-          <p className="mb-2">Follow the latest launches:</p>
-          <Button onClick={addFrame}>Add Farstore</Button>
-        </div>
-      }
-      {
-        added && !notifications &&
-        <div className="italic">
-          <p>Notifications are off. Turn them on from the menu in the top right.</p>
-        </div>
-      }
-    </div>
-  ) : (
-    <div className="text-center py-4 italic">
-      <p>Not on Farcaster? <Link href="https://link.warpcast.com/download-qr">Join here.</Link></p>
-    </div>
-  )
-
-  const openUrl = useCallback((url: string) => {
-    const normalizedUrl = url.indexOf('://') > -1 ? url : `https://${url}`;
-    if (!!context) {
-      if (window.navigator.userAgent == 'warpcast') {
-        sdk.actions.openUrl(`https://warpcast.com/~/frames/launch?url=${encodeURIComponent(normalizedUrl)}`);
-      } else {
-        sdk.actions.openUrl(`https://warpcast.com/~/mini-apps/launch?url=${encodeURIComponent(normalizedUrl)}`);
-      }
-    } else {
-      window.open(normalizedUrl, '_blank');
+  const onFc = !!context;
+  useEffect(() => {
+    if (onFc && !added) {
+      addFrame()
     }
-  }, [context]);
+  }, [onFc, added]);
 
   return (
     <div className="max-w-[500px] mx-auto px-4">
       <div className="mx-auto py-4">
-        <h1 className="text-2xl font-bold text-center mb-4 mt-4">Discover Farcaster Apps</h1>
-        {addButton}
-        <input
-          type="text"
-          name="search"
-          placeholder="search apps"
-          className="mt-4 text-input"
-          onChange={(e) => setSearch(e.target.value)}
-          value={search}
-          style={{ padding: '.5em 1em', width: '100%' }}
-        />
-        <div className="flex my-4 font-bold">
-          <div className="flex-grow">
-            Sort by:
-            <select
-              onChange={(e) => setSort(e.target.value)}
-              style={{
-                marginLeft: ".5em",
-                backgroundColor: "transparent"
-              }}
-            >
-              <option value="liquid">Most liquid</option>
-              <option value="recent">Most recent</option>
-            </select>
+        <h1 className="text-2xl font-bold text-center mt-4">Discover Farcaster Apps</h1>
+        <div className="text-center py-8 italic">
+          <div className="flex-shrink">
+            <Link href="/list" style={{ color: '#8C75D1', textDecoration: 'none', fontWeight: 'bold' }}>Submit an app →</Link>
           </div>
-          <div className="flex-shrink"><Link href="/list" style={{ color: '#7C65C1', textDecoration: 'none' }}>Submit →</Link></div>
+        </div>
+        <div className="flex" style={{ marginBottom: '1em' }}>
+          <div className="flex-shrink">
+            <button
+              className={`ui-island secondary-button ${filter == 'fund' ? 'selected' : ''}`}
+              onClick={() => setFilter('fund')}
+            >
+              Fund
+            </button>
+          </div>
+          <div className="flex-shrink">&nbsp;</div>
+          <div className="flex-shrink">
+            <button
+              className={`ui-island secondary-button ${filter == 'trade' ? 'selected' : ''}`}
+              onClick={() => setFilter('trade')}
+            >
+              Trade
+            </button>
+          </div>
+          <div className="flex-shrink">&nbsp;</div>
+          <input
+            type="text"
+            name="search"
+            placeholder="search apps"
+            className="text-input flex-grow"
+            onClick={() => {
+              setFilter('');
+              setSearch(search);
+            }}
+            onChange={(e) => setSearch(e.target.value)}
+            value={search}
+            style={{ padding: '.5em 1em', width: '100%' }}
+          />
         </div>
         {
-          frameIds.map(id => (
-            <div key={id} className="mb-4">
-              <AppTileContainer frameId={id} openUrl={openUrl} />
+          !loaded ? (
+            <div style={{ textAlign: 'center' }}>
+              <div className="loading-spinner-bg loading-spinner" style={{ width: '4em', height: '4em', margin: '0 auto' }} />
+            </div>
+          ) : (
+            <div style={{ fontWeight: 'bold', marginBottom: '1em', marginLeft: '1em' }}>
+              {filter == 'fund' && 'Fund apps that deserve a coin'}
+              {filter == 'trade' && 'Trade the apps you believe in'}
+            </div>
+          )
+        }
+        {
+          domains.map(domain => (
+            <div key={domain} className="mb-4">
+              <AppTileContainer domain={domain} />
             </div>
           ))
         }

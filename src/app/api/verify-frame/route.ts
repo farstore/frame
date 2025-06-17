@@ -24,6 +24,9 @@ interface NeynarUser {
   custody_address: string;
   verified_addresses: {
     eth_addresses: string[];
+    primary: {
+      eth_address: string | null;
+    }
   }
 }
 
@@ -97,18 +100,21 @@ export async function GET(request: NextRequest) {
       throw new Error("Unable to fetch user from Neynar.");
     }
     if (user.custody_address.toLowerCase() != fcJsonHeader.key.toLowerCase()) {
-      throw new Error("User FID does not match key in farcaster.json header");
+      throw new Error("User FID does not farcaster.json header");
+    }
+    const owner = user.verified_addresses.primary.eth_address;
+    if (!owner) {
+      throw new Error("Primary address for user not found");
     }
     const wallet = new ethers.Wallet(process.env.FARSTORE_VERIFIER_KEY as string, null);
-    const eligibleOwners = user.verified_addresses.eth_addresses.concat(user.custody_address);
-    const messageHash = ethers.solidityPackedKeccak256(
-        ["string", "address[]"],
-        [domain, eligibleOwners]
-    );
-    const messageHashBytes = ethers.getBytes(messageHash);
-    const signature = await wallet.signMessage(messageHashBytes);
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+    const preimage = ethers.getBytes(abiCoder.encode(
+      ["string", "address"],
+      [domain, owner]
+    ));
+    const signature = await wallet.signMessage(preimage);
 
-    return Response.json({ domain, eligibleOwners, signature });
+    return Response.json({ domain, owner, signature });
   } catch (e) {
   return Response.json({ error: (e as Error).message }, { status: 400 });
   }

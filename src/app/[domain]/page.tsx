@@ -17,13 +17,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { domain } = await params;
   const frame = {
     version: "next",
-    imageUrl: `${appUrl}/app/${domain}/opengraph-image`,
+    imageUrl: `${appUrl}/${domain}/opengraph-image`,
     button: {
       title: "View App",
       action: {
         type: "launch_frame",
         name: "Farstore",
-        url: `${appUrl}/app/${domain}`,
+        url: `${appUrl}/${domain}`,
         splashImageUrl: `${appUrl}/splash.png`,
         splashBackgroundColor: "#ffffff",
       },

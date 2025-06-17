@@ -1,56 +1,56 @@
 import Username from "./Username";
 import { getNullAddress } from "~/lib/data";
-import { Button } from "~/components/ui/Button";
 
 export default function AppTile({
   iconUrl,
   name,
   owner,
+  symbol,
   liquidity,
-  openAction,
+  funding,
 }: {
   iconUrl: string | null;
   name: string | null;
   owner: string;
+  symbol: string;
   liquidity: number;
-  openAction?: React.MouseEventHandler<HTMLButtonElement>;
+  funding: number;
 }) {
   return (
     <div className="flex ui-island" style={{ alignItems: "center", padding: '.75em' }}>
-      <div className="flex flex-shrink"
-        style={{
-          width: "4em",
-          height: "4em",
-          margin: '0 auto',
-          alignItems: 'center',
-          justifyContent: 'center',
-          // borderRadius: '12px',
-          // border: '1px solid #ccc',
-        }}
-      >
-        <img
-          src={iconUrl || '/fallback-icon.png'}
-          style={{ borderRadius: '12px' }}
-          alt="app-logo"
-        />
-      </div>
-      <div className="flex-grow" style={{ marginLeft: "1em", padding: '.25em 0' }}>
+    <div className="flex flex-shrink"
+      style={{
+        width: "4em",
+        height: "4em",
+        margin: '0 auto',
+        alignItems: 'center',
+        justifyContent: 'center',
+        // borderRadius: '12px',
+        // border: '1px solid #ccc',
+      }}
+    >
+      <img
+        src={iconUrl || '/fallback-icon.png'}
+        style={{ borderRadius: '12px', maxHeight: '100%' }}
+        alt="app-logo"
+      />
+    </div>
+      <div className="flex-grow" style={{ marginLeft: ".75em", padding: '.25em 0' }}>
         <div style={{ fontWeight: "bold" }}>{name || (<i>loading</i>)}</div>
         <div style={{ fontSize: ".75em" }}>
-          <span>By <Username address={owner || getNullAddress()} /></span>
-          {
-            liquidity > 0 ? (
-              <div>{liquidity.toFixed(2)} ETH in token</div>
-            ) : (
-              <div>No token</div>
-            )
-          }
+          <span>by <Username address={owner || getNullAddress()} /></span>
         </div>
       </div>
       {
-        openAction && (
-          <div className="flex-shrink" style={{ fontSize: '.75em' }}>
-            <Button onClick={openAction}>Open</Button>
+        liquidity > 0 ? (
+          <div className="flex-shrink" style={{ textAlign: 'right' }}>
+            <div style={{ fontWeight: 'bold' }}>{(liquidity || 0).toFixed(2)}Ξ</div>
+            <div style={{ fontSize: '.75em' }}>in ${symbol}</div>
+          </div>
+        ) : (
+          <div className="flex-shrink" style={{ textAlign: 'right' }}>
+            <div style={{ fontWeight: 'bold' }}>{(funding || 0).toFixed(2)}Ξ</div>
+            <div style={{ fontSize: '.75em' }}>in funding</div>
           </div>
         )
       }
