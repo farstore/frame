@@ -25,7 +25,7 @@ export default async function Image({ params }: Props) {
           <div tw="ml-10 mb-5 flex flex-row align-center justify-center">
             <img tw="mt-1" src={iconUrl} width="160px" height="160px" alt="farstore-logo" style={{ borderRadius: '12px' }} />
             <div tw="ml-10 flex flex-col text-left align-center justify-center">
-              <div tw="text-6xl">{name}</div>
+              <div tw="text-4xl">{name}</div>
               <div tw="text-2xl ml-1">{tagline || 'View on Farstore'}</div>
             </div>
           </div>

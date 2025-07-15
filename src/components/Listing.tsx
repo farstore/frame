@@ -361,6 +361,17 @@ export default function Listing({ domain }: { domain: string; }) {
     "interval=60",
   ];
 
+  const showContributions =
+    !token ||                     // No token OR
+    deployer != getNullAddress()  // Token deployed via farstore
+  ;
+
+  const needsRefund =
+    token &&                                        // token exists AND
+    deployer == getNullAddress() &&                 // not deployed by farstore AND
+    funders.filter(f => f == userAddress).length > 0   // they contributed
+  ;
+
   return (
     <div className="max-w-[700px] mx-auto px-4">
       <div className="mx-auto py-4">
@@ -540,9 +551,15 @@ export default function Listing({ domain }: { domain: string; }) {
           )
         }
         {
-          funders.length > 0 &&
+          funders.length > 0 && (showContributions || needsRefund) &&
           <div className='listing-fixed-width' style={{ margin: '1em auto' }}>
-            <div style={{ fontWeight: 'bold' }}>Funders</div>
+            {
+              needsRefund ? (
+                <div style={{ fontWeight: 'bold' }}>Launched elsewhere, claim refund</div>
+              ) : (
+                <div style={{ fontWeight: 'bold' }}>Funders</div>
+              )
+            }
             {
               funders.map((funder, i) => {
                 if (funds[i] == 0n) {

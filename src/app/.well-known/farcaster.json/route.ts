@@ -17,6 +17,7 @@ export async function GET() {
       splashImageUrl: `${appUrl}/splash.png`,
       splashBackgroundColor: "#ffffff",
       webhookUrl: `${appUrl}/api/webhook`,
+      primaryCategory: 'shopping'
     },
   };
 
