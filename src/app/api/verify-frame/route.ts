@@ -40,6 +40,12 @@ const fromBase64Url = (encodedString: string) => {
   // 2. Decode the Base64 string
   return Buffer.from(base64String, 'base64').toString('utf8');
 }
+const fromBase64UrlToHex = (encodedString: string) => {
+  // 1. Convert Base64URL to Base64 by replacing URL-safe characters
+  const base64String = encodedString.replace(/-/g, '+').replace(/_/g, '/');
+  // 2. Decode the Base64 string
+  return `0x${Buffer.from(base64String, 'base64').toString('hex')}`;
+}
 
 export async function GET(request: NextRequest) {
   const domain = (request.nextUrl.searchParams.get('domain') || '').toLowerCase();
@@ -51,7 +57,12 @@ export async function GET(request: NextRequest) {
     const fcJson = result.data as FcJson;
     const fcJsonHeader = JSON.parse(fromBase64Url(fcJson.accountAssociation.header)) as FcJsonHeader;
     const fcJsonPayload = JSON.parse(fromBase64Url(fcJson.accountAssociation.payload)) as FcJsonPayload;
-    const fcJsonSignature = fromBase64Url(fcJson.accountAssociation.signature);
+    let fcJsonSignature = null;
+    let fcJsonSignature = fromBase64Url(fcJson.accountAssociation.signature);
+    if (!fcJsonSignature.startsWith('0x')) {
+      // New format
+      fcJsonSignature = fromBase64UrlToHex(fcJson.accountAssociation.signature);
+    }
 
     // Get query string parameters
     const fid = fcJsonHeader.fid;
