@@ -57,7 +57,6 @@ export async function GET(request: NextRequest) {
     const fcJson = result.data as FcJson;
     const fcJsonHeader = JSON.parse(fromBase64Url(fcJson.accountAssociation.header)) as FcJsonHeader;
     const fcJsonPayload = JSON.parse(fromBase64Url(fcJson.accountAssociation.payload)) as FcJsonPayload;
-    let fcJsonSignature = null;
     let fcJsonSignature = fromBase64Url(fcJson.accountAssociation.signature);
     if (!fcJsonSignature.startsWith('0x')) {
       // New format
@@ -110,8 +109,10 @@ export async function GET(request: NextRequest) {
     if (!user) {
       throw new Error("Unable to fetch user from Neynar.");
     }
-    if (user.custody_address.toLowerCase() != fcJsonHeader.key.toLowerCase()) {
-      throw new Error("User FID does not farcaster.json header");
+    const addresses = (user.verified_addresses.eth_addresses || []).concat([user.custody_address]);
+
+    if (addresses.filter(a => a.toLowerCase() == fcJsonHeader.key.toLowerCase()).length == 0) {
+      throw new Error("User FID does not match farcaster.json header");
     }
     const owner = user.verified_addresses.primary.eth_address;
     if (!owner) {
